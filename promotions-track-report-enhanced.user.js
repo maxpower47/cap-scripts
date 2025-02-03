@@ -23,7 +23,7 @@
         data.ptDate = $(el).find('td:eq(1)').text().trim();
 
         var leadership = $(el).find('td:eq(2)').text().trim();
-        var leadershipMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d\d)\))?Interactive -\s?(\d\d ... \d\d\d\d)?/.exec(leadership);
+        var leadershipMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d+)\))?Interactive -\s?(\d\d ... \d\d\d\d)?/.exec(leadership);
 
         if (leadershipMatches && leadershipMatches.length > 0) {
             data.leadershipTestDate = leadershipMatches[1];
@@ -36,12 +36,10 @@
             data.drillDate = 'Not required';
         }
 
-
-
-        // TODO - deal with AE sometimes not being required
-
-        var aerospace = $(el).find('td:eq(4)').text().trim();
-        var aerospaceMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d\d)\))?Interactive -\s?(\d\d ... \d\d\d\d)?/.exec(aerospace);
+        var aerospaceEl = $(el).find('td:eq(4)');
+        data.aerospaceRequired = !(aerospaceEl.find('.fa-ban').length > 1);
+        var aerospace = aerospaceEl.text().trim();
+        var aerospaceMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d+)\))?(?: - .)?Interactive -\s?(\d\d ... \d\d\d\d)?(?: - .)?/.exec(aerospace);
 
         if (aerospaceMatches && aerospaceMatches.length > 0) {
             data.aerospaceTestDate = aerospaceMatches[1];
@@ -88,7 +86,7 @@
                         data.ptDate &&
                         (data.leadershipTestDate || data.leadershipInteractive) &&
                         data.drillDate &&
-                        (data.aerospaceTestDate || data.aerospaceInteractive) &&
+                        (!data.aerospaceRequired || data.aerospaceTestDate || data.aerospaceInteractive) &&
                         data.cdDate &&
                         (!data.specialActivityRequired || data.specialActivity.values().every((x) => x)) &&
                         (!data.sdaRequired || data.sda.values().every((x) => x)));
@@ -101,9 +99,7 @@
     };
 
     $('.cadet_track').each((ti, tel) => {
-        $('thead tr:eq(1)', tel).prepend(() => {
-            return '<th>Ready</th>';
-        });
+        $('.row').css('margin','0');
 
         $("tbody tr", tel).each((i, el) => {
             var data = getData(el);
@@ -111,32 +107,23 @@
             console.log(data);
 
 
-            $(el).prepend(() => {
-                return '<td>' + (data.ready ? 'Ready for promotion' : '') + '</td>';
-            });
+            if (data.ready) {
+                $(el).css('background-color', '#c7ddc7');
+            }
 
-            $(el).find('td:eq(1)').append(() => {
+            $(el).find('td:eq(0)').append(() => {
                 return getEligibilityDateMarkup(data);
             });
 
             $(el).parents('.cadet_track').next('.printCadetTracking').children(':eq(' + (((i + 1) * 2) - 1) + ')').each((ci, cel) => {
-                $(cel).children()
-                    .removeClass(['col-md-2', 'col-md-3'])
-                    .addClass('col-md-2');
+                if (data.ready) {
+                    $(cel).css('background-color', '#c7ddc7').css('-webkit-print-color-adjust','exact').css('padding','10px');
+                }
 
-                $(cel).prepend(() => {
-                    return '<div class="fix-md-1">' + (data.ready ? 'Ready for promotion' : '') + '</div>';
-                });
-
-                $(cel).find('div:eq(1)').append(() => {
+                $(cel).find('div:eq(0)').append(() => {
                     return getEligibilityDateMarkup(data);
                 });
-
-                // 12 grid, but col-md-1 doesn't set flex properties at < 768px
-                $(cel).find('.fix-md-1').css('flex', '0 0 8.333333%').css('max-width', '8.333333%');
             });
         });
     });
-
-
 })();
