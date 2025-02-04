@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Promotions Track Report Enhanced
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
+// @version      1.1.1
 // @description  Enhanced cadet promotions track report
 // @author       Matthew Schmidt
 // @match        https://www.capnhq.gov/CAP.ProfessionalLevels.Web/Reports/CadetPromotionsTrack
@@ -88,8 +88,8 @@
                         data.drillDate &&
                         (!data.aerospaceRequired || data.aerospaceTestDate || data.aerospaceInteractive) &&
                         data.cdDate &&
-                        (!data.specialActivityRequired || data.specialActivity.values().every((x) => x)) &&
-                        (!data.sdaRequired || data.sda.values().every((x) => x)));
+                        (!data.specialActivityRequired || Object.values(data.specialActivity).every((x) => x)) &&
+                        (!data.sdaRequired || Object.values(data.sda).every((x) => x)));
 
         return data;
     };
