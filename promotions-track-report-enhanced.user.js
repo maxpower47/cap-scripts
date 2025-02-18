@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Promotions Track Report Enhanced
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.2.0
 // @description  Enhanced cadet promotions track report
 // @author       Matthew Schmidt
 // @match        https://www.capnhq.gov/CAP.ProfessionalLevels.Web/Reports/CadetPromotionsTrack
@@ -17,8 +17,10 @@
     'use strict';
     var $ = window.jQuery;
 
-    var getData = (el) => {
+    var getData = (el, achievement) => {
         var data = {};
+
+        data.achievement = achievement;
 
         data.ptDate = $(el).find('td:eq(1)').text().trim();
 
@@ -77,6 +79,7 @@
 
         if (tooltipMatches && tooltipMatches.length > 0) {
             data.eligibilityDate = new Date(tooltipMatches[3]);
+            data.joinDate = new Date(tooltipMatches[2]);
             data.email = tooltipMatches[1];
             data.joinDateString = tooltipMatches[2];
             data.eligibilityDateString = tooltipMatches[3];
@@ -95,14 +98,34 @@
     };
 
     var getEligibilityDateMarkup = (data) => {
-        return '<br/><b>Promotion Eligible:</b><br/><span style="color:' + (data.eligibilityDate <= new Date() ? 'green' : 'red') + ';">' + data.eligibilityDateString + '</span>';
+
+        var joinDatePlus8 = new Date(data.joinDate.getTime());
+        joinDatePlus8.setTime(joinDatePlus8.getTime() + ((24*60*60*1000) * 56));
+
+        var joinDatePlus2 = new Date(data.joinDate.getTime());
+        joinDatePlus2.setTime(joinDatePlus2.getTime() + ((24*60*60*1000) * 14));
+
+        var out = '';
+
+        if (data.achievement === '1') {
+            out += '<br/><b>Join Date:</b><br/><span style="color:' + (joinDatePlus8 >= new Date() ? 'green' : joinDatePlus2 >= new Date() ? 'yellow' : 'red') + ';">' + data.joinDateString + '</span>';
+        }
+
+        out += '<br/><b>Promotion Eligible:</b><br/><span style="color:' + (data.eligibilityDate <= new Date() ? 'green' : 'red') + ';">' + data.eligibilityDateString + '</span>';
+        return out;
+    };
+
+    var getAchievement = (el) => {
+        return $(el).find('tr:first th:first').text().replace('Achievement', '').trim();
     };
 
     $('.cadet_track').each((ti, tel) => {
+        var achievement = getAchievement(tel);
+
         $('.row').css('margin','0');
 
         $("tbody tr", tel).each((i, el) => {
-            var data = getData(el);
+            var data = getData(el, achievement);
 
             console.log(data);
 
