@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Promotions Track Report Enhanced
 // @namespace    http://tampermonkey.net/
-// @version      1.2.0
+// @version      1.3.0
 // @description  Enhanced cadet promotions track report
 // @author       Matthew Schmidt
 // @match        https://www.capnhq.gov/CAP.ProfessionalLevels.Web/Reports/CadetPromotionsTrack
@@ -23,9 +23,11 @@
         data.achievement = achievement;
 
         data.ptDate = $(el).find('td:eq(1)').text().trim();
+        data.ptRequired = true;
 
         var leadership = $(el).find('td:eq(2)').text().trim();
         var leadershipMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d+)\))?Interactive -\s?(\d\d ... \d\d\d\d)?/.exec(leadership);
+        data.leadershipRequired = true; // TODO - not always
 
         if (leadershipMatches && leadershipMatches.length > 0) {
             data.leadershipTestDate = leadershipMatches[1];
@@ -36,6 +38,9 @@
         data.drillDate = $(el).find('td:eq(3)').text().trim();
         if (!!$(el).find('td:eq(3)').find('.fa-ban').length) {
             data.drillDate = 'Not required';
+            data.drillRequired = false;
+        } else {
+            data.drillRequired = true;
         }
 
         var aerospaceEl = $(el).find('td:eq(4)');
@@ -52,6 +57,9 @@
         data.cdDate = $(el).find('td:eq(5)').text().trim();
         if (!!$(el).find('td:eq(5)').find('.fa-ban').length) {
             data.cdDate = 'Not required';
+            data.cdRequired = false;
+        } else {
+            data.cdRequired = true;
         }
 
         var specialActivityEl = $(el).find('td:eq(7)');
@@ -94,6 +102,26 @@
                         (!data.specialActivityRequired || Object.values(data.specialActivity).every((x) => x)) &&
                         (!data.sdaRequired || Object.values(data.sda).every((x) => x)));
 
+
+        data.numRequired = 0;
+        data.numRequired += (data.ptRequired ? 1 : 0);
+        data.numRequired += (data.leadershipRequired ? 1 : 0);
+        data.numRequired += (data.drillRequired ? 1 : 0);
+        data.numRequired += (data.aerospaceRequired ? 1 : 0);
+        data.numRequired += (data.cdRequired ? 1 : 0);
+        data.numRequired += (data.specialActivityRequired ? 1 : 0);
+        data.numRequired += (data.sdaRequired ? 1 : 0);
+
+        data.numCompleted = 0;
+        data.numCompleted += ((data.ptDate && data.ptRequired) ? 1 : 0);
+        data.numCompleted += (data.leadershipRequired && ((data.leadershipTestDate || data.leadershipInteractive)) ? 1 : 0);
+        data.numCompleted += ((data.drillDate && data.drillRequired) ? 1 : 0);
+        data.numCompleted += (data.aerospaceRequired && ((data.aerospaceTestDate || data.aerospaceInteractive)) ? 1 : 0);
+        data.numCompleted += ((data.cdDate && data.cdRequired) ? 1 : 0);
+        data.numCompleted += ((data.specialActivityRequired && Object.values(data.specialActivity).every((x) => x)) ? 1 : 0);
+        data.numCompleted += ((data.sdaRequired && Object.values(data.sda).every((x) => x)) ? 1 : 0);
+
+
         return data;
     };
 
@@ -134,6 +162,10 @@
                 $(el).css('background-color', '#c7ddc7');
             }
 
+            if (data.numRequired - data.numCompleted == 1) {
+                $(el).css('background-color', '#fcf89f');
+            }
+
             $(el).find('td:eq(0)').append(() => {
                 return getEligibilityDateMarkup(data);
             });
@@ -141,6 +173,10 @@
             $(el).parents('.cadet_track').next('.printCadetTracking').children(':eq(' + (((i + 1) * 2) - 1) + ')').each((ci, cel) => {
                 if (data.ready) {
                     $(cel).css('background-color', '#c7ddc7').css('-webkit-print-color-adjust','exact').css('padding','10px');
+                }
+
+                if (data.numRequired - data.numCompleted == 1) {
+                    $(cel).css('background-color', '#fcf89f').css('-webkit-print-color-adjust','exact').css('padding','10px');
                 }
 
                 $(cel).find('div:eq(0)').append(() => {
