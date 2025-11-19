@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Promotions Track Report Enhanced
 // @namespace    http://tampermonkey.net/
-// @version      1.3.0
+// @version      1.3.1
 // @description  Enhanced cadet promotions track report
 // @author       Matthew Schmidt
 // @match        https://www.capnhq.gov/CAP.ProfessionalLevels.Web/Reports/CadetPromotionsTrack
@@ -25,9 +25,10 @@
         data.ptDate = $(el).find('td:eq(1)').text().trim();
         data.ptRequired = true;
 
-        var leadership = $(el).find('td:eq(2)').text().trim();
+        var leadershipEl = $(el).find('td:eq(2)');
+        data.leadershipRequired = leadershipEl.find('i').not('.fa-ban').length > 0;
+        var leadership = leadershipEl.text().trim();
         var leadershipMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d+)\))?Interactive -\s?(\d\d ... \d\d\d\d)?/.exec(leadership);
-        data.leadershipRequired = true; // TODO - not always
 
         if (leadershipMatches && leadershipMatches.length > 0) {
             data.leadershipTestDate = leadershipMatches[1];
@@ -44,7 +45,7 @@
         }
 
         var aerospaceEl = $(el).find('td:eq(4)');
-        data.aerospaceRequired = !(aerospaceEl.find('.fa-ban').length > 1);
+        data.aerospaceRequired = aerospaceEl.find('i').not('.fa-ban').length > 0;
         var aerospace = aerospaceEl.text().trim();
         var aerospaceMatches = /Test - (\d\d ... \d\d\d\d)?\s*(?:\((\d+)\))?(?: - .)?Interactive -\s?(\d\d ... \d\d\d\d)?(?: - .)?/.exec(aerospace);
 
@@ -68,7 +69,13 @@
 
         var specialActivityChildren = specialActivityEl.contents().filter(function() { return this.nodeType === 3 || this.nodeName === 'B'; });
         for (let i = 0; i < specialActivityChildren.length; i+=2) {
-            data.specialActivity[$(specialActivityChildren[i]).text().split(':')[0]] = $(specialActivityChildren[i+1]).text().replace('None', '').trim();
+            var splitItem = $(specialActivityChildren[i]).text().split(':');
+            if (splitItem.length === 1) {
+                data.specialActivity.activity = splitItem[0];
+                break;
+            } else {
+                data.specialActivity[$(specialActivityChildren[i]).text().split(':')[0]] = $(specialActivityChildren[i+1]).text().replace('None', '').trim();
+            }
         }
 
 
