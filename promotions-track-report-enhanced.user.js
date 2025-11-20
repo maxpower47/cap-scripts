@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Promotions Track Report Enhanced
 // @namespace    http://tampermonkey.net/
-// @version      1.3.1
+// @version      1.4.0
 // @description  Enhanced cadet promotions track report
 // @author       Matthew Schmidt
 // @match        https://www.capnhq.gov/CAP.ProfessionalLevels.Web/Reports/CadetPromotionsTrack
@@ -129,6 +129,10 @@
         data.numCompleted += ((data.sdaRequired && Object.values(data.sda).every((x) => x)) ? 1 : 0);
 
 
+        var promotePlus90 = data.achievement === '1' ? new Date(data.joinDate.getTime()) : new Date(data.eligibilityDate.getTime());
+        promotePlus90.setTime(promotePlus90.getTime() + ((24*60*60*1000) * 90));
+        data.stalled = promotePlus90 <= new Date();
+
         return data;
     };
 
@@ -169,8 +173,16 @@
                 $(el).css('background-color', '#c7ddc7');
             }
 
-            if (data.numRequired - data.numCompleted == 1) {
-                $(el).css('background-color', '#fcf89f');
+            if (data.numRequired - data.numCompleted == 1 && data.stalled) {
+                $(el).css('background-color', '#f7ab59');
+            } else {
+                if (data.stalled) {
+                    $(el).css('background-color', '#f78d8d');
+                }
+
+                if (data.numRequired - data.numCompleted == 1 && !data.stalled) {
+                    $(el).css('background-color', '#fcf89f');
+                }
             }
 
             $(el).find('td:eq(0)').append(() => {
