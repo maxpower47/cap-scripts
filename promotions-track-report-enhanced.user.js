@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Promotions Track Report Enhanced
 // @namespace    http://tampermonkey.net/
-// @version      1.4.1
+// @version      1.4.2
 // @description  Enhanced cadet promotions track report
 // @author       Matthew Schmidt
 // @match        https://www.capnhq.gov/CAP.ProfessionalLevels.Web/Reports/CadetPromotionsTrack
@@ -189,12 +189,21 @@
             });
 
             $(el).parents('.cadet_track').next('.printCadetTracking').children(':eq(' + (((i + 1) * 2) - 1) + ')').each((ci, cel) => {
-                if (data.ready) {
-                    $(cel).css('background-color', '#c7ddc7').css('-webkit-print-color-adjust','exact').css('padding','10px');
+
+                if (data.numRequired - data.numCompleted == 1 && data.stalled) {
+                    $(cel).css('background-color', '#f7ab59').css('-webkit-print-color-adjust','exact').css('padding','10px');
+                } else {
+                    if (data.stalled) {
+                         $(cel).css('background-color', '#f78d8d').css('-webkit-print-color-adjust','exact').css('padding','10px');
+                    }
+
+                    if (data.numRequired - data.numCompleted == 1 && !data.stalled) {
+                         $(cel).css('background-color', '#fcf89f').css('-webkit-print-color-adjust','exact').css('padding','10px');
+                    }
                 }
 
-                if (data.numRequired - data.numCompleted == 1) {
-                    $(cel).css('background-color', '#fcf89f').css('-webkit-print-color-adjust','exact').css('padding','10px');
+                if (data.ready) {
+                    $(cel).css('background-color', '#c7ddc7').css('-webkit-print-color-adjust','exact').css('padding','10px');
                 }
 
                 $(cel).find('div:eq(0)').append(() => {
